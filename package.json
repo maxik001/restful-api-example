@@ -1,0 +1,22 @@
+{
+  "name": "restful-api-example",
+  "version": "1.0.0",
+  "description": "Example of RESTful API",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/maxik001/restful-api-example.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/maxik001/restful-api-example/issues"
+  },
+  "homepage": "https://github.com/maxik001/restful-api-example#readme",
+  "dependencies": {
+    "express": "^4.14.0"
+  }
+}
