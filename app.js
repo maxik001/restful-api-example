@@ -10,6 +10,7 @@ import http from 'http';
 import app_config from './config/app_config.json';
 
 import api from './api';
+import logger from './logger';
 
 // Create app
 const app = express();
@@ -17,6 +18,8 @@ const app = express();
 // Configure body parsing middleware
 app.use(body_parser.urlencoded({ extended: true }));
 app.use(body_parser.json());
+
+app.use(logger);
 
 app.use('/', api);
 
