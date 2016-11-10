@@ -1,5 +1,5 @@
 /**
- * Filename: routes.js
+ * Filename: hash.js
  */
 
 export default class hash {
