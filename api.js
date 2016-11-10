@@ -21,9 +21,8 @@ router.get(
 );
 
 // Hash
-//router.delete('/hash', );
-//router.get('/hash/:hash_value', routes.hash_route.get());
+router.delete('/hash', routes_index.hash.revoke.bind(routes_index.hash) );
 router.get('/hash/:hash_value', routes_index.hash.get.bind(routes_index.hash) );
-//router.post('/hash', );
+router.post('/hash', routes_index.hash.create.bind(routes_index.hash) );
 
 export default router;
