@@ -13,6 +13,8 @@ export default class hash {
 	get(req, res) {
 		const tmp = req.params.hash_value
 		
+		redis_client.set("testa", "testb");
+		
 		res.json({ message: "Hello, World!", hash : tmp });
 	}
 	
