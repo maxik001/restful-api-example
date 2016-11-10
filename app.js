@@ -11,12 +11,6 @@ import app_config from './config/app_config.json';
 
 import api from './api';
 import logger from './logger';
-import redis_client from './redis_client';
-
-// Configure redis_client actions
-redis_client.on('error', function(err) {
-	console.log("Error " + err);
-}); 
 
 // Create app
 const app = express();

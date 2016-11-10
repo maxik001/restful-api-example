@@ -1,6 +1,7 @@
 /**
  * Filename: hash.js
  */
+import redis_client from '../redis_client';
 
 export default class hash {
     constructor() {
