@@ -4,7 +4,7 @@
 
 export default class api_response {
 	constructor() {
-		this.data = [];
+		this.data = {};
 		this.errors = [];
 	}
 

@@ -10,8 +10,6 @@ import redis_config from '../../config/redis_config.json';
 export default class hash {
 	
     constructor() {
-    	this.api_response = new api_response();
-
     	this.key_prefix = "hash";
     	
     	this.redis_client = new redis.createClient(
@@ -44,8 +42,10 @@ export default class hash {
 		this.redis_client.keys(
 			redis_key,
 			function(err, reply) {
+				var api_response_obj = new api_response();
+
 				if (err) { 
-					this.api_response.add_error(
+					api_response_obj.add_error(
 						1,
 						"Cant connect to external server",
 						503,
@@ -54,24 +54,20 @@ export default class hash {
 				} else {
 					if(reply.length == 1) {
 						var redis_key_parts = reply[0].split(":");
-						this.api_response.set_data("trust");
-						/*
-						this.api_response.set_data({ 
+						api_response_obj.set_data({ 
 							"success": true,
 							"email": redis_key_parts[1],
 							"message": "This is valis hash"
 						});
-						*/
 					} else {
-						/*
-						this.api_response.set_data({ 
+						api_response_obj.set_data({ 
 							"success": false,
 							"message": "Cant find hash"
 						});
-						*/
 					}
 				}
-				res.json(this.api_response.get());
+
+				res.json(api_response_obj.get());
 			}
 		);
 	}
