@@ -55,6 +55,13 @@ export default class hash {
 			const hash_value =crypto.randomBytes(64).toString('hex'); 
 			const redis_key = this.key_prefix + ":"+req.body.data['email']+":" + hash_value;
 
+			// Del all key hash binded to this email
+			this.redis_client.keys(
+				this.key_prefix + ":"+req.body.data['email']+":*",
+				
+			);
+					
+			// Set new key
 			this.redis_client.set(
 				redis_key,
 				"1",
