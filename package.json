@@ -21,6 +21,7 @@
     "body-parser": "^1.15.2",
     "express": "^4.14.0",
     "morgan": "^1.7.0",
+    "payload-validator": "^1.0.4",
     "redis": "^2.6.3"
   }
 }

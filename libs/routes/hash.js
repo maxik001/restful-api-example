@@ -28,9 +28,13 @@ export default class hash {
 
     /**
      * function create()
+     * 
+     * Create hash in redis db. Payload pass in POST.
+     * 
      */
 	create(req, res) {
-		
+		console.log(req.body);
+		res.end();
 	}
 
 	/**
