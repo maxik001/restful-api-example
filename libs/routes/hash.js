@@ -1,7 +1,9 @@
 /**
  * Filename: hash.js
  */
+import crypto from 'crypto';
 import redis from 'redis';
+import json_validator from 'payload-validator';
 
 import api_response from '../../classes/api_response';
 
@@ -33,8 +35,53 @@ export default class hash {
      * 
      */
 	create(req, res) {
-		console.log(req.body);
-		res.end();
+		if(!req.body.data) {
+			res.status(422);
+			res.end();
+			return;
+		}
+		
+		var expected_payload = { "email": "" };
+		var mandatory_elements = ["email"];
+		
+		var validate_result = json_validator.validator(
+			req.body.data,
+			expected_payload,
+			mandatory_elements,
+			false
+		);
+		
+		if(validate_result.success) {
+			const hash_value =crypto.randomBytes(64).toString('hex'); 
+			const redis_key = this.key_prefix + ":"+req.body.data['email']+":" + hash_value;
+
+			this.redis_client.set(
+				redis_key,
+				"1",
+				function(err, reply) {
+					var api_response_obj = new api_response();
+					
+					if (err) { 
+						api_response_obj.add_error(
+							1,
+							"Cant connect to external server",
+							503,
+							"Redis server is not available"
+						);
+					} else {
+						api_response_obj.set_data({ 
+							"message": "Use this hash to validate registration",
+							"hash": hash_value
+						});						
+					}
+					res.status(201).json(api_response_obj.get());
+					res.end();
+				}
+			);
+		} else {
+			res.status(422);
+			res.end();
+		}
 	}
 
 	/**
