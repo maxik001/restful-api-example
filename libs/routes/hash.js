@@ -33,9 +33,10 @@ export default class hash {
      */
     
     /**
-     * function clear_hash_key()
+     * function clear_hash_keys()
      * 
-     * key @string
+     * err @object
+     * replies @object
      */
     clear_hash_keys(err, replies) {
     	if(replies.length > 0) {
@@ -44,28 +45,7 @@ export default class hash {
     		);
 		}
     }
-    
-    create_hash_key(key) {
-		this.redis_client.set(
-			key,
-			"1",
-			function(err, reply) {
-				var api_response_obj = new api_response();
-				
-				if (err) { 
-					this.response_redis_is_not_available();
-				} else {
-					api_response_obj.set_data({ 
-						"message": "Use this hash to validate registration",
-						"hash": hash_value
-					});						
-				}
-				res.status(201).json(api_response_obj.get());
-				res.end();
-			}    	
-		);
-    }
-    
+        
     /**
      * function process_hash_key_set()
      * 
@@ -75,30 +55,38 @@ export default class hash {
     	// Clear all keys matched with this email
     	const key_pattern = this.key_prefix+":"+email+":*";
     	
-		this.redis_client.keys(key_pattern,	this.clear_hash_keys(err, replies));
-    	
-		// Create new key
+		//this.redis_client.keys(key_pattern,	this.clear_hash_keys(err, replies));
 		
-		this.redis_client.set(
-			key_pattern,
-			"1",
-			function hash_key_set_result(err, reply) {
-				var api_response_obj = new api_response();
-				
-				if (err) { 
-					this.response_redis_is_not_available();
-				} else {
-					api_response_obj.set_data({ 
-						"message": "Use this hash to validate registration",
-						"hash": hash_value
-					});						
-				}
-				res.status(201).json(api_response_obj.get());
-				res.end();
-			}
-		);
+		this.redis_client.keys(key_pattern,	function(err, reply) {});
+		
+		// Create new key
+		const hash_value = crypto.randomBytes(64).toString('hex'); 
+		const new_key = this.key_prefix+":"+email+":"+hash_value;
+		
+		this.redis_client.set(new_key, "1", this.response_new_key_created(err, reply));
     }
     
+    /**
+     * function response_new_key_created(err, reply)
+     */
+    response_new_key_created(err, reply) {
+		var api_response_obj = new api_response();
+		
+		if (err) { 
+			this.response_redis_is_not_available();
+		} else {
+			api_response_obj.set_data({ 
+				"message": "Use this hash to validate registration",
+				"hash": hash_value
+			});						
+		}
+		res.status(201).json(api_response_obj.get());
+		res.end();    	
+    }
+    
+    /**
+     * function response_redis_is_not_available()
+     */
     response_redis_is_not_available() {
     	var api_response_obj = new api_response();
 
@@ -141,9 +129,6 @@ export default class hash {
 		);
 		
 		if(validate_result.success) {
-			// const hash_value = crypto.randomBytes(64).toString('hex'); 
-			// const key_name = this.key_prefix + ":"+req.body.data['email']+":" + hash_value;
-
 			this.process_hash_key_set(req.body.data['email']);
 		} else {
 			res.status(422);
