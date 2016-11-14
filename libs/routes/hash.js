@@ -29,6 +29,95 @@ export default class hash {
     }
 
     /**
+     * Secondary functions  
+     */
+    
+    /**
+     * function clear_hash_key()
+     * 
+     * key @string
+     */
+    clear_hash_keys(err, replies) {
+    	if(replies.length > 0) {
+    		replies.forEach(
+    			function(key) { this.redis_client.del(key); }
+    		);
+		}
+    }
+    
+    create_hash_key(key) {
+		this.redis_client.set(
+			key,
+			"1",
+			function(err, reply) {
+				var api_response_obj = new api_response();
+				
+				if (err) { 
+					this.response_redis_is_not_available();
+				} else {
+					api_response_obj.set_data({ 
+						"message": "Use this hash to validate registration",
+						"hash": hash_value
+					});						
+				}
+				res.status(201).json(api_response_obj.get());
+				res.end();
+			}    	
+		);
+    }
+    
+    /**
+     * function process_hash_key_set()
+     * 
+     * email @string
+     */
+    process_hash_key_set(email) {
+    	// Clear all keys matched with this email
+    	const key_pattern = this.key_prefix+":"+email+":*";
+    	
+		this.redis_client.keys(key_pattern,	this.clear_hash_keys(err, replies));
+    	
+		// Create new key
+		
+		this.redis_client.set(
+			key_pattern,
+			"1",
+			function hash_key_set_result(err, reply) {
+				var api_response_obj = new api_response();
+				
+				if (err) { 
+					this.response_redis_is_not_available();
+				} else {
+					api_response_obj.set_data({ 
+						"message": "Use this hash to validate registration",
+						"hash": hash_value
+					});						
+				}
+				res.status(201).json(api_response_obj.get());
+				res.end();
+			}
+		);
+    }
+    
+    response_redis_is_not_available() {
+    	var api_response_obj = new api_response();
+
+    	api_response_obj.add_error(
+			1,
+			"Cant connect to external server",
+			503,
+			"Redis server is not available"
+		);
+    	res.json(api_response_obj.get());
+    	res.end();
+    }
+    
+    
+    /**
+     * Primary funcions
+     */
+    
+    /**
      * function create()
      * 
      * Create hash in redis db. Payload pass in POST.
@@ -52,39 +141,10 @@ export default class hash {
 		);
 		
 		if(validate_result.success) {
-			const hash_value =crypto.randomBytes(64).toString('hex'); 
-			const redis_key = this.key_prefix + ":"+req.body.data['email']+":" + hash_value;
+			// const hash_value = crypto.randomBytes(64).toString('hex'); 
+			// const key_name = this.key_prefix + ":"+req.body.data['email']+":" + hash_value;
 
-			// Del all key hash binded to this email
-			this.redis_client.keys(
-				this.key_prefix + ":"+req.body.data['email']+":*",
-				
-			);
-					
-			// Set new key
-			this.redis_client.set(
-				redis_key,
-				"1",
-				function(err, reply) {
-					var api_response_obj = new api_response();
-					
-					if (err) { 
-						api_response_obj.add_error(
-							1,
-							"Cant connect to external server",
-							503,
-							"Redis server is not available"
-						);
-					} else {
-						api_response_obj.set_data({ 
-							"message": "Use this hash to validate registration",
-							"hash": hash_value
-						});						
-					}
-					res.status(201).json(api_response_obj.get());
-					res.end();
-				}
-			);
+			this.process_hash_key_set(req.body.data['email']);
 		} else {
 			res.status(422);
 			res.end();
@@ -102,13 +162,8 @@ export default class hash {
 			function(err, reply) {
 				var api_response_obj = new api_response();
 
-				if (err) { 
-					api_response_obj.add_error(
-						1,
-						"Cant connect to external server",
-						503,
-						"Redis server is not available"
-					);
+				if (err) {
+					this.response_redis_is_not_available();
 				} else {
 					if(reply.length == 1) {
 						var redis_key_parts = reply[0].split(":");
@@ -134,7 +189,20 @@ export default class hash {
 	 * function revoke()
 	 */
 	revoke(req, res) {
-		res.json({ action: "revoke" });
+		
+		var redis_key = this.key_prefix + ":maxgusev@gmail.com:*";
+		
+		this.redis_client.keys(
+			redis_key,
+			function(err, replies) {
+				if(replies.length > 0) {
+					
+				}
+				res.json(replies);
+			}
+		);
+
+		
 	}
 }
 
