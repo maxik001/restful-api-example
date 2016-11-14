@@ -55,9 +55,9 @@ export default class hash {
     	// Clear all keys matched with this email
     	const key_pattern = this.key_prefix+":"+email+":*";
     	
-		//this.redis_client.keys(key_pattern,	this.clear_hash_keys(err, replies));
+		this.redis_client.keys(key_pattern,	this.clear_hash_keys());
 		
-		this.redis_client.keys(key_pattern,	function(err, reply) {});
+		//this.redis_client.keys(key_pattern,	function(err, reply) {});
 		
 		// Create new key
 		const hash_value = crypto.randomBytes(64).toString('hex'); 
