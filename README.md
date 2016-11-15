@@ -14,9 +14,9 @@ For example such a procedure:
 3. The user clicks on this link and completes the registration.
 
 Presented api allows you to:
-1. Get a new identity hash.
-2. Check the existing identifier hash.
-3. Remove the identifier hash.
+1. Get a new identity hash
+2. Check the existing identifier hash
+3. Remove the identifier hash
 
 ### API documentation
 
@@ -46,7 +46,7 @@ HTTP/1.1 200 OK
 #### 3. Delete hash
 Request:
 ```
-curl -i -X DELETE -H "Content-Type: application/json" -d '{ "data": {"email":"test@gmail.com", "hash":"33c46eccfeca491ffe95ddd1f16d416c50c32e2a92c5c51f5c065dbf86ec018917efc363f8762e3c4640c952f743878d8b22f625a376af17648d7f229f88e0df"}}' "http://127.0.0.1:8080/hash/"
+curl -i -X DELETE -H "Content-Type: application/json" -d '{ "data": {"email":"maxgusev@gmail.com", "hash":"33c46eccfeca491ffe95ddd1f16d416c50c32e2a92c5c51f5c065dbf86ec018917efc363f8762e3c4640c952f743878d8b22f625a376af17648d7f229f88e0df"}}' "http://127.0.0.1:8080/hash/"
 ```
 
 Response: 
