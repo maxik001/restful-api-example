@@ -9,6 +9,8 @@ import api_response from '../../classes/api_response';
 
 import redis_client from '../redis_client';
 
+import hash_config from '../../config/hash_config.json';
+
 export default class hash {
 	
     constructor() {
@@ -73,6 +75,26 @@ export default class hash {
 				    	res.json(api_response_obj.get());
 				    	res.end();					
 					} else {
+						// Set key expire
+						redis_client.expire(
+							new_key, 
+							hash_config.expire,
+							function(err, reply) {
+								var api_response_obj = new api_response();
+								
+								if (err) { 
+							    	api_response_obj.add_error(
+										1,
+										"Cant connect to external server",
+										503,
+										"Redis server is not available"
+									);
+							    	res.json(api_response_obj.get());
+							    	res.end();					
+								}
+							}
+						);				
+						
 						api_response_obj.set_data({ 
 							"message": "Use this hash to validate registration",
 							"hash": hash_value
