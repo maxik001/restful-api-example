@@ -16,7 +16,7 @@ export default class hash {
     constructor() {
     	this.key_prefix = "hash";
     }
-
+    
     /**
      * function create()
      * 
@@ -24,9 +24,9 @@ export default class hash {
      * 
      */
 	create(req, res) {
+		// Validate input attributes
 		if(!req.body.data) {
-			res.status(422);
-			res.end();
+			res.status(422).end();
 			return;
 		}
 		
@@ -39,30 +39,19 @@ export default class hash {
 			mandatory_elements,
 			false
 		);
-		
+
+		// Process
 		if(validate_result.success) {
 	    	// Clear all keys matched with this email
 	    	const key_pattern = this.key_prefix+":"+req.body.data['email']+":*";
 	    	
-			redis_client.keys(
-				key_pattern,
-				function(err, replies) {
-			    	if(replies.length > 0) {
-			    		replies.forEach(
-			    			function(key) { redis_client.del(key); }
-			    		);
-					}
-				}
-			);
+			redis_client.keys(key_pattern, redis_keys_del);
 			
 			// Create new key
 			const hash_value = crypto.randomBytes(64).toString('hex'); 
 			const new_key = this.key_prefix+":"+req.body.data['email']+":"+hash_value;
 			
-			redis_client.set(
-				new_key, 
-				"1",
-				function(err, reply) {
+			redis_client.set(new_key, "1",		function(err, reply) {
 					var api_response_obj = new api_response();
 					
 					if (err) { 
@@ -105,8 +94,16 @@ export default class hash {
 				}
 			);
 		} else {
-			res.status(422);
-			res.end();
+			res.status(422).end();
+		}
+		
+		// Additional functions
+		function redis_keys_del(err, replies) {
+	    	if(replies.length > 0) {
+	    		replies.forEach(
+	    			function(key) { redis_client.del(key); }
+	    		);
+			}
 		}
 	}
 
@@ -116,48 +113,48 @@ export default class hash {
 	get(req, res) {
 		var redis_key = this.key_prefix + ":*:" + req.params.hash_value; 
 		
-		redis_client.keys(
-			redis_key,
-			function(err, reply) {
-				var api_response_obj = new api_response();
+		redis_client.keys(redis_key, redis_answer_handle);
+		
+		// Additional functions
+		function redis_answer_handle(err, reply) {
+			var api_response_obj = new api_response();
 
-				if (err) {
-			    	api_response_obj.add_error(
-						1,
-						"Cant connect to external server",
-						503,
-						"Redis server is not available"
-					);
-			    	res.json(api_response_obj.get());
-			    	res.end();	
+			if (err) {
+		    	api_response_obj.add_error(
+					1,
+					"Cant connect to external server",
+					503,
+					"Redis server is not available"
+				);
+		    	res.json(api_response_obj.get());
+		    	res.end();	
+			} else {
+				if(reply.length == 1) {
+					var redis_key_parts = reply[0].split(":");
+					api_response_obj.set_data({ 
+						"success": true,
+						"email": redis_key_parts[1],
+						"message": "This is valid hash"
+					});
 				} else {
-					if(reply.length == 1) {
-						var redis_key_parts = reply[0].split(":");
-						api_response_obj.set_data({ 
-							"success": true,
-							"email": redis_key_parts[1],
-							"message": "This is valid hash"
-						});
-					} else {
-						api_response_obj.set_data({ 
-							"success": false,
-							"message": "Cant find hash"
-						});
-					}
+					api_response_obj.set_data({ 
+						"success": false,
+						"message": "Cant find hash"
+					});
 				}
-
-				res.json(api_response_obj.get());
 			}
-		);
+
+			res.json(api_response_obj.get());
+		}
 	}
 	
 	/**
 	 * function revoke()
 	 */
 	revoke(req, res) {
+		// Validate input attributes
 		if(!req.body.data) {
-			res.status(422);
-			res.end();
+			res.status(422).end();
 			return;
 		}
 		
@@ -171,17 +168,18 @@ export default class hash {
 			false
 		);
 		
+		// Process
 		if(validate_result.success) {
 			const redis_key = this.key_prefix+":"+req.body.data['email']+":"+req.body.data['hash'];
 			
 			redis_client.del(redis_key); 
 			
 			res.status(200);
-			res.end();
 		} else {
 			res.status(422);
-			res.end();
 		}
+		
+		res.end();
 	}
 }
 
