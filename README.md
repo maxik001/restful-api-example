@@ -46,7 +46,7 @@ HTTP/1.1 200 OK
 #### 3. Delete hash
 Request:
 ```
-curl -i -X DELETE -H "Content-Type: application/json" -d '{ "data": {"email":"maxgusev@gmail.com", "hash":"993a7b571ea38c220cd12b0fbe3fc85b"}}' "http://127.0.0.1:8080/hash/"
+curl -i -X DELETE -H "Content-Type: application/json" -d '{ "data": {"email":"test@gmail.com", "hash":"993a7b571ea38c220cd12b0fbe3fc85b"}}' "http://127.0.0.1:8080/hash/"
 
 ```
 
