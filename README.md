@@ -28,13 +28,13 @@ curl -i -X POST -H "Content-Type: application/json" -d '{ "data": {"email":"test
 Response:
 HTTP/1.1 201 Created
 ```
-{"data":{"message":"Use this hash to validate registration","hash":"33c46eccfeca491ffe95ddd1f16d416c50c32e2a92c5c51f5c065dbf86ec018917efc363f8762e3c4640c952f743878d8b22f625a376af17648d7f229f88e0df"}}
+{"data":{"message":"Use this hash to validate registration","hash":"993a7b571ea38c220cd12b0fbe3fc85b"}}
 ```
 
 #### 2. Validate hash
 Request:
 ```
-curl -i -X GET -H "Content-Type: application/json" "http://127.0.0.1:8080/hash/33c46eccfeca491ffe95ddd1f16d416c50c32e2a92c5c51f5c065dbf86ec018917efc363f8762e3c4640c952f743878d8b22f625a376af17648d7f229f88e0df"
+curl -i -X GET -H "Content-Type: application/json" "http://127.0.0.1:8080/hash/993a7b571ea38c220cd12b0fbe3fc85b"
 ``` 
 
 Response:
@@ -46,7 +46,8 @@ HTTP/1.1 200 OK
 #### 3. Delete hash
 Request:
 ```
-curl -i -X DELETE -H "Content-Type: application/json" -d '{ "data": {"email":"test@gmail.com", "hash":"33c46eccfeca491ffe95ddd1f16d416c50c32e2a92c5c51f5c065dbf86ec018917efc363f8762e3c4640c952f743878d8b22f625a376af17648d7f229f88e0df"}}' "http://127.0.0.1:8080/hash/"
+curl -i -X DELETE -H "Content-Type: application/json" -d '{ "data": {"email":"maxgusev@gmail.com", "hash":"993a7b571ea38c220cd12b0fbe3fc85b"}}' "http://127.0.0.1:8080/hash/"
+
 ```
 
 Response: 

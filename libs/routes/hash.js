@@ -1,6 +1,7 @@
 /**
  * Filename: hash.js
  */
+
 import crypto from 'crypto';
 import redis from 'redis';
 import json_validator from 'payload-validator';
@@ -11,123 +12,90 @@ import redis_client from '../redis_client';
 
 import hash_config from '../../config/hash_config.json';
 
-export default class hash {
+/**
+ * Exported functions
+ */
+function create(req, res) {
+	// Validate input attributes
+	if(!req.body.data) {
+		res.status(422).end();
+		return;
+	}
 	
-    constructor() {
-    	this.key_prefix = "hash";
-    }
-    
-    /**
-     * function create()
-     * 
-     * Create hash in redis db. Payload pass in POST.
-     * 
-     */
-	create(req, res) {
-		// Validate input attributes
-		if(!req.body.data) {
-			res.status(422).end();
-			return;
-		}
-		
-		var expected_payload = { "email": "" };
-		var mandatory_elements = ["email"];
-		
-		var validate_result = json_validator.validator(
-			req.body.data,
-			expected_payload,
-			mandatory_elements,
-			false
-		);
+	var expected_payload = { "email": "" };
+	var mandatory_elements = ["email"];
+	
+	var validate_result = json_validator.validator(
+		req.body.data,
+		expected_payload,
+		mandatory_elements,
+		false
+	);
 
-		// Process
-		if(validate_result.success) {
-	    	// Clear all keys matched with this email
-	    	const key_pattern = this.key_prefix+":"+req.body.data['email']+":*";
-	    	
-			redis_client.keys(key_pattern, redis_keys_del);
-			
-			// Create new key
-			const hash_value = crypto.randomBytes(64).toString('hex'); 
-			const new_key = this.key_prefix+":"+req.body.data['email']+":"+hash_value;
-			
-			redis_client.set(new_key, "1",		function(err, reply) {
-					var api_response_obj = new api_response();
-					
-					if (err) { 
-				    	api_response_obj.add_error(
-							1,
-							"Cant connect to external server",
-							503,
-							"Redis server is not available"
-						);
-				    	res.json(api_response_obj.get());
-				    	res.end();					
-					} else {
-						// Set key expire
-						redis_client.expire(
-							new_key, 
-							hash_config.expire,
-							function(err, reply) {
-								var api_response_obj = new api_response();
-								
-								if (err) { 
-							    	api_response_obj.add_error(
-										1,
-										"Cant connect to external server",
-										503,
-										"Redis server is not available"
-									);
-							    	res.json(api_response_obj.get());
-							    	res.end();					
-								}
-							}
-						);				
-						
-						api_response_obj.set_data({ 
-							"message": "Use this hash to validate registration",
-							"hash": hash_value
-						});						
-					}
-					res.status(201).json(api_response_obj.get());
-					res.end();
-				}
-			);
-		} else {
-			res.status(422).end();
-		}
+	// Process
+	if(validate_result.success) {
+    	// Clear all keys matched with this email
+    	const key_pattern = get_key_prefix()+":"+req.body.data['email']+":*";
+    	
+		redis_client.keys(key_pattern, redis_keys_del);
 		
-		// Additional functions
-		function redis_keys_del(err, replies) {
-	    	if(replies.length > 0) {
-	    		replies.forEach(
-	    			function(key) { redis_client.del(key); }
-	    		);
+		// Create new key
+		const hash_value = crypto.randomBytes(16).toString('hex'); 
+		const new_key = get_key_prefix()+":"+req.body.data['email']+":"+hash_value;
+		
+		redis_client.set(new_key, "1",	function(err, reply) {
+				var api_response_obj = new api_response();
+				
+				if (err) { 
+			    	response503();				
+				} else {
+					// Set key expire
+					redis_client.expire(
+						new_key, 
+						hash_config.expire,
+						function(err, reply) {
+							var api_response_obj = new api_response();
+							
+							if (err) { 
+						    	response503();				
+							}
+						}
+					);				
+					
+					api_response_obj.set_data({ 
+						"message": "Use this hash to validate registration",
+						"hash": hash_value
+					});						
+				}
+				res.status(201).json(api_response_obj.get());
+				res.end();
 			}
+		);
+	} else {
+		res.status(422).end();
+	}
+	
+	// Additional functions
+	function redis_keys_del(err, replies) {
+    	if(replies.length > 0) {
+    		replies.forEach(
+    			function(key) { redis_client.del(key); }
+    		);
 		}
 	}
 
-	/**
-	 * function get()
-	 */
-	get(req, res) {
-		var redis_key = this.key_prefix + ":*:" + req.params.hash_value; 
-		
-		redis_client.keys(redis_key, redis_answer_handle);
-		
-		// Additional functions
-		function redis_answer_handle(err, reply) {
+}
+
+function get(req, res) {
+	var redis_key = get_key_prefix() + ":*:" + req.params.hash_value; 
+	
+	redis_client.keys(
+		redis_key,
+		function(err, reply) {
 			var api_response_obj = new api_response();
 
 			if (err) {
-		    	api_response_obj.add_error(
-					1,
-					"Cant connect to external server",
-					503,
-					"Redis server is not available"
-				);
-		    	res.json(api_response_obj.get());
-		    	res.end();	
+				response503();
 			} else {
 				if(reply.length == 1) {
 					var redis_key_parts = reply[0].split(":");
@@ -146,40 +114,56 @@ export default class hash {
 
 			res.json(api_response_obj.get());
 		}
-	}
-	
-	/**
-	 * function revoke()
-	 */
-	revoke(req, res) {
-		// Validate input attributes
-		if(!req.body.data) {
-			res.status(422).end();
-			return;
-		}
-		
-		var expected_payload = {"email": "", "hash": "" };
-		var mandatory_elements = ["email", "hash"];
-		
-		var validate_result = json_validator.validator(
-			req.body.data,
-			expected_payload,
-			mandatory_elements,
-			false
-		);
-		
-		// Process
-		if(validate_result.success) {
-			const redis_key = this.key_prefix+":"+req.body.data['email']+":"+req.body.data['hash'];
-			
-			redis_client.del(redis_key); 
-			
-			res.status(200);
-		} else {
-			res.status(422);
-		}
-		
-		res.end();
-	}
+	);
 }
 
+function revoke(req, res) {
+	// Validate input attributes
+	if(!req.body.data) {
+		res.status(422).end();
+		return;
+	}
+	
+	var expected_payload = {"email": "", "hash": "" };
+	var mandatory_elements = ["email", "hash"];
+	
+	var validate_result = json_validator.validator(
+		req.body.data,
+		expected_payload,
+		mandatory_elements,
+		false
+	);
+	
+	// Process
+	if(validate_result.success) {
+		const redis_key = get_key_prefix()+":"+req.body.data['email']+":"+req.body.data['hash'];
+		
+		redis_client.del(redis_key); 
+		
+		res.status(200);
+	} else {
+		res.status(422);
+	}
+	
+	res.end();
+}
+
+function get_key_prefix() { return "hash"; }
+
+/**
+ * Other functions
+ */
+function response503() {
+	var api_response_obj = new api_response();
+
+	api_response_obj.add_error(
+		1,
+		"Cant connect to external server",
+		503,
+		"Redis server is not available"
+	);
+   	res.json(api_response_obj.get());
+   	res.status(200).end();						
+}
+	
+export {create, get, revoke};
