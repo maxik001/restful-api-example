@@ -21,6 +21,15 @@ app.use(body_parser.json());
 
 app.use(logger);
 
+// CROS Allow
+var allowCrossDomain = function(req, res, next) {
+	res.header("Access-Control-Allow-Origin", "*");
+	res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
+	next();
+};
+
+app.use(allowCrossDomain);
+
 app.use('/', api);
 
 // Create HTTP Server
