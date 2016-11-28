@@ -50,34 +50,20 @@ function create(req, res) {
 		const new_key = get_key_prefix()+":"+req.body.data['email']+":"+hash_value;
 		
 		redis_client.set(new_key, "1",	function(err, reply) {
-			var api_response_obj = new api_response();
-			
-			if (err) { 
-		    	response503();				
-			} else {
-				// Set key expire
-				redis_client.expire(
-					new_key, 
-					hash_config.expire,
-					function(err, reply) {
-						var api_response_obj = new api_response();
-						
-						if (err) { 
-					    	response503();				
-						}
-					}
-				);				
+			if (err) { res.status(503).end(); } 
 				
-				api_response_obj.set_data({ 
-					"message": "Use this hash to validate registration",
-					"hash": hash_value
-				});						
-			}
-		
+			// Set key expire
+			redis_client.expire(
+				new_key, 
+				hash_config.expire,
+				function(err, reply) {
+					if (err) { res.status(503).end(); }
+				}
+			);				
+			
 			mail_hash(req.body.data['email'], hash_value);
 			
-			res.status(201).json(api_response_obj.get());
-			res.end();
+			res.status(202).end();
 		});
 		
 	} else {
