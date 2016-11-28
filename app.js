@@ -10,6 +10,7 @@ import http from 'http';
 import app_config from './config/app_config.json';
 
 import api from './api';
+import allowCros from './libs/cros';
 import logger from './logger';
 
 // Create app
@@ -22,13 +23,7 @@ app.use(body_parser.json());
 app.use(logger);
 
 // CROS Allow
-var allowCrossDomain = function(req, res, next) {
-	res.header("Access-Control-Allow-Origin", "*");
-	res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
-	next();
-};
-
-app.use(allowCrossDomain);
+app.use(allowCros);
 
 app.use('/', api);
 
