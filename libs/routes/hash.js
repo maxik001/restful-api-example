@@ -3,14 +3,20 @@
  */
 
 import crypto from 'crypto';
-import redis from 'redis';
+import fs from 'fs';
+import hogan from 'hogan.js';
 import json_validator from 'payload-validator';
+import nodemailer from 'nodemailer';
+import redis from 'redis';
+import sendmailTransport from 'nodemailer-sendmail-transport';
 
 import api_response from '../../classes/api_response';
 
 import redis_client from '../redis_client';
 
+import api_client_config from '../../config/api_client_config.json';
 import hash_config from '../../config/hash_config.json';
+import notification_config from '../../config/notification_config.json';
 
 /**
  * Exported functions
@@ -44,38 +50,81 @@ function create(req, res) {
 		const new_key = get_key_prefix()+":"+req.body.data['email']+":"+hash_value;
 		
 		redis_client.set(new_key, "1",	function(err, reply) {
-				var api_response_obj = new api_response();
-				
-				if (err) { 
-			    	response503();				
-				} else {
-					// Set key expire
-					redis_client.expire(
-						new_key, 
-						hash_config.expire,
-						function(err, reply) {
-							var api_response_obj = new api_response();
-							
-							if (err) { 
-						    	response503();				
-							}
+			var api_response_obj = new api_response();
+			
+			if (err) { 
+		    	response503();				
+			} else {
+				// Set key expire
+				redis_client.expire(
+					new_key, 
+					hash_config.expire,
+					function(err, reply) {
+						var api_response_obj = new api_response();
+						
+						if (err) { 
+					    	response503();				
 						}
-					);				
-					
-					api_response_obj.set_data({ 
-						"message": "Use this hash to validate registration",
-						"hash": hash_value
-					});						
-				}
-				res.status(201).json(api_response_obj.get());
-				res.end();
+					}
+				);				
+				
+				api_response_obj.set_data({ 
+					"message": "Use this hash to validate registration",
+					"hash": hash_value
+				});						
 			}
-		);
+		
+			mail_hash(req.body.data['email'], hash_value);
+			
+			res.status(201).json(api_response_obj.get());
+			res.end();
+		});
+		
 	} else {
 		res.status(422).end();
 	}
 	
 	// Additional functions
+	
+	/**
+	 * Mail hash to mailbox
+	 */
+	function mail_hash(email, hash) {
+		// HTML+CSS to InLine http://foundation.zurb.com/emails/inliner-v2.html
+		// HTML Template https://github.com/mailgun/transactional-email-templates
+		// Template Engine http://twitter.github.io/hogan.js/
+		
+		// Mail transport
+		var transporter = nodemailer.createTransport(sendmailTransport({path: '/usr/sbin/sendmail'}));
+		
+		// Main template
+		var mailTemplate = fs.readFileSync('./hjs/reg_confirm.hjs', 'utf-8');
+		const compiledMailTemplate = hogan.compile(mailTemplate);
+		
+		// Some data
+		const siteName = api_client_config.protocol + "://" + api_client_config.baseDomain;
+		const regLink = siteName + "/reg/validate/" + hash;
+		
+		var mailOptions = {
+			from: notification_config.replyTo,
+			to: email,
+			subject: 'Регистрация на сайте ' + api_client_config.baseDomain,
+			html: compiledMailTemplate.render({site: siteName, link: regLink})
+		}
+		
+		transporter.sendMail(mailOptions, function(error, info){
+		    if(error){
+		        console.log(error);
+		    } else {
+		        console.log('Message sent: ' + info);
+		    };
+		});
+		
+	}
+	
+	/**
+	 * Clear all keys in redis 
+	 */
 	function redis_keys_del(err, replies) {
     	if(replies.length > 0) {
     		replies.forEach(
