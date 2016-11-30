@@ -185,6 +185,8 @@ function revoke(req, res) {
  * Other functions
  */
 
+function get_key_prefix() { return "hash"; }
+
 // Depricated
 function response503() {
 	var api_response_obj = new api_response();
