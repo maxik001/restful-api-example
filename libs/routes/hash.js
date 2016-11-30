@@ -127,25 +127,18 @@ function get(req, res) {
 	redis_client.keys(
 		redis_key,
 		function(err, reply) {
-			var api_response_obj = new api_response();
 
 			if (err) { res.status(503).end(); }
 			
 			if(reply.length == 1) {
 				var redis_key_parts = reply[0].split(":");
-				api_response_obj.set_data({ 
-					"success": true,
-					"email": redis_key_parts[1],
-					"message": "This is valid hash"
-				});
+				
+				var api_response_obj = new api_response();
+				api_response_obj.set_data({"email": redis_key_parts[1]});
+				res.json(api_response_obj.get());
 			} else {
-				api_response_obj.set_data({ 
-					"success": false,
-					"message": "Cant find hash"
-				});
+				res.status(404).end();
 			}
-
-			res.json(api_response_obj.get());
 		}
 	);
 }
