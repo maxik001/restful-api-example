@@ -89,7 +89,7 @@ function create(req, res) {
 		
 		// Some data
 		const siteName = api_client_config.protocol + "://" + api_client_config.baseDomain;
-		const regLink = siteName + "/reg/validate/" + hash;
+		const regLink = siteName + "/system/signup/" + hash;
 		
 		var mailOptions = {
 			from: notification_config.replyTo,
