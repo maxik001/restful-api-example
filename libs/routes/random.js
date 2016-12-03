@@ -21,7 +21,7 @@ function get(req, res) {
 	
 	// Response
 	var api_response_obj = new api_response();
-	api_response_obj.set_data({"value": rnd_values});
+	api_response_obj.set_data({"values": rnd_values});
 	res.status(200).json(api_response_obj.get());
 }
 
