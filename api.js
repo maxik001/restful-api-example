@@ -6,11 +6,15 @@
 import express from 'express';
 import json_validator from 'payload-validator';
 
+import * as accounts from './libs/routes/accounts';
 import * as hash from './libs/routes/hash';
 import * as random from './libs/routes/random';
 
 // Define routes
 const router = express.Router();
+
+// Accounts
+router.post('/accounts', accounts.create);
 
 // Hash
 router.delete('/hash', hash.revoke );
