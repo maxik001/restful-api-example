@@ -6,26 +6,46 @@ import redis_client from '../redis_client';
 
 import api_response from '../../classes/api_response';
 
-function create(req, res) {
+function create(req, res, next) {
 	// Validate input attributes
-
 	var bodySchema = joi.object().keys({
 		id: joi.number().positive().required(),
 		login: joi.string().email().required(),
 		password: joi.string().required()
 	}).with('id', 'login', 'password');
-	
-	joi.validate(req.body, bodySchema, function(err, value) {
-		if(err) {
-			// Need some more log in future
-			// console.log("err=", err); console.log("value=", value);	
-			res.status(422).end();
-		}
-		 
+
+	var p = new Promise(function(resolve, reject) {
+		joi.validate(req.body, bodySchema, function(err, value) {
+			if(err) { reject("1"); } else { resolve("2"); }
+			
+		});
 	});
 	
-
+	console.log(p);
+	
+	p.then(function() {
+		console.log("then");
+	}).catch(function() {		
+		console.log("catch");
+	});
+	
+	
 	res.status(200).end();
+/*
+	console.log(p);
+	
+	joi.validate(req.body, bodySchema, createAccount);
+	
+	redis_client.incr("accounts:sequence", createAccount);
+
+	function createAccount(err, accountId) {
+		if(!err) { console.log("1"); res.status(503).end(); return 1; }
+		console.log("err = ", err);
+		console.log("new id = ", accountId);
+	}
+	
+	res.status(200).end();
+	*/
 }
 
 export {create};
