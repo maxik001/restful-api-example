@@ -14,38 +14,22 @@ function create(req, res, next) {
 		password: joi.string().required()
 	}).with('id', 'login', 'password');
 
-	var p = new Promise(function(resolve, reject) {
+	var isBodyValid = new Promise(function(resolve, reject) {
 		joi.validate(req.body, bodySchema, function(err, value) {
-			if(err) { reject("1"); } else { resolve("2"); }
-			
+			if(err) { reject(); } else { resolve(); }
 		});
 	});
 	
-	console.log(p);
-	
-	p.then(function() {
-		console.log("then");
-	}).catch(function() {		
-		console.log("catch");
+	isBodyValid.then(function() {
+		console.log('valid');
+		
+		var newP = new Promise(function(resolve, reject){ re(); });
+		
+		res.status(200).end();
+	}).catch(function() {
+		console.log('invalid');
+		res.status(422).end();
 	});
-	
-	
-	res.status(200).end();
-/*
-	console.log(p);
-	
-	joi.validate(req.body, bodySchema, createAccount);
-	
-	redis_client.incr("accounts:sequence", createAccount);
-
-	function createAccount(err, accountId) {
-		if(!err) { console.log("1"); res.status(503).end(); return 1; }
-		console.log("err = ", err);
-		console.log("new id = ", accountId);
-	}
-	
-	res.status(200).end();
-	*/
 }
 
 export {create};
