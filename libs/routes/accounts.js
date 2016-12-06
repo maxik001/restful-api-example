@@ -23,13 +23,18 @@ function create(req, res, next) {
 	isBodyValid.then(function() {
 		console.log('valid');
 		
-		var newP = new Promise(function(resolve, reject){ re(); });
+		var newP = new Promise();
 		
 		res.status(200).end();
 	}).catch(function() {
 		console.log('invalid');
 		res.status(422).end();
 	});
+	
+	function validateBody() {
+		
+	}
+	
 }
 
 export {create};
