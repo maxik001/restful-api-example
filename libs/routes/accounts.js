@@ -9,16 +9,34 @@ import api_response from '../../classes/api_response';
 function create(req, res, next) {
 	
 	validateBody().then(function(resolve, reject) {
-		return new Promise(function(resolve, reject) {
-			redis_client.hget('accounts:lookup:login', req.body.login, function(redis_error, redis_reply) {
-				if(redis_error) { reject({status: '503'}); }
-				else { 
-					if(redis_reply != null) {
-						reject({ code: '422', message: {code: '1', title: 'Value is not unique', detai: 'Check login field'}});
-					} else { resolve(); }
-				} 
-			});
-		});
+		Promise.all([
+        	function(resolve, reject) {
+    			redis_client.hget('accounts:lookup:login', req.body.login, function(redis_error, redis_reply) {
+    				if(redis_error) { reject({status: '503'}); }
+    				else { 
+    					console.log("a ", redis_reply);
+    					if(redis_reply != null) {
+    						reject({code: '422', message: {code: '1', title: 'Value is not unique', detail: 'Check login field'}});
+    					} else { resolve(); }
+    				} 
+    			});
+    		},
+	        function(resolve, reject) {
+				redis_client.hget('accounts:lookup:nickname', req.body.nickname, function(redis_error, redis_reply) {
+					if(redis_error) { reject({status: '503'}); }
+					else { 
+						console.log("b ", redis_reply);
+						if(redis_reply != null) {
+							reject({code: '422', message: {code: '2', title: 'Value is not unique', detail: 'Check nickname field'}});
+						} else { resolve(); }
+					} 
+				});
+			}    		
+        ]).then(function() { 
+        	console.log("1"); 
+        }).catch(function() { 
+        	console.log("2"); 
+        });
 	}).then(function() { 
 		return new Promise(function(resolve, reject) { 
 			redis_client.incr('accounts:sequence', function(redis_error, redis_reply) {
@@ -43,6 +61,7 @@ function create(req, res, next) {
 	}).then(function() {
 		res.status(201).end();
 	}).catch(function(error) {
+		console.log(error);
 		switch(error.code) {
 			case '422': {
 				
@@ -70,8 +89,9 @@ function create(req, res, next) {
 			// Validate input attributes
 			var bodySchema = joi.object().keys({
 				login: joi.string().email().required(),
+				nickname: joi.string().required(),
 				password: joi.string().required()
-			}).with('login', 'password');
+			}).with('login', 'nickname', 'password');
 
 			joi.validate(req.body, bodySchema, function(err, value) {
 				if(err) { reject({code:'422'}); } 
@@ -82,6 +102,8 @@ function create(req, res, next) {
 }
 
 function get(req, res) {
+	
+	
 	res.status(200).end();
 }
 
