@@ -15,6 +15,7 @@ const router = express.Router();
 
 // Accounts
 router.post('/accounts', accounts.create);
+router.get('/accounts/:id', accounts.get);
 
 // Hash
 router.delete('/hash', hash.revoke );
