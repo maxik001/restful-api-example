@@ -1,12 +1,13 @@
 import joi from 'joi';
 import json_validator from 'payload-validator';
+import md5 from 'md5';
 import redis from 'redis';
 
 import redis_client from '../redis_client';
 
 import api_response from '../../classes/api_response';
 
-function create(req, res, next) {
+function create(req, res) {
 	
 	validateBody().then(function() {
 		return new Promise(function(resolve, reject) {
@@ -28,7 +29,7 @@ function create(req, res, next) {
 		});
 	}).then(function(account_id) {
 		return new Promise(function(resolve, reject) {
-			redis_client.hmset('accounts:'+account_id, ['login', req.body.login, 'nickname', req.body.nickname, 'password', req.body.password], function(redis_error, redis_reply) {
+			redis_client.hmset('accounts:'+account_id, ['login', req.body.login, 'nickname', req.body.nickname, 'password', md5(req.body.password)], function(redis_error, redis_reply) {
 				if(redis_error) { reject({status: '503'}); } 
 				else { resolve(account_id); } 
 			});
