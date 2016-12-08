@@ -10,7 +10,6 @@ function create(req, res, next) {
 	
 	validateBody().then(function() {
 		return new Promise(function(resolve, reject) {
-
 			Promise.all([
 	             isLoginUnique(req.body.login),
 	             isNicknameUnique(req.body.nickname)
@@ -19,10 +18,7 @@ function create(req, res, next) {
 	        }).catch(function(error) { 
 	        	reject(error);
 	        });
-		
 		});
-		
-		
 	}).then(function() { 
 		return new Promise(function(resolve, reject) { 
 			redis_client.incr('accounts:sequence', function(redis_error, redis_reply) {
@@ -70,7 +66,6 @@ function create(req, res, next) {
 			}
 		}
 	});
-	
 	
 	function validateBody() {
 		return new Promise(function(resolve, reject) {
