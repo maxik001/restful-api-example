@@ -8,35 +8,21 @@ import api_response from '../../classes/api_response';
 
 function create(req, res, next) {
 	
-	validateBody().then(function(resolve, reject) {
-		Promise.all([
-        	function(resolve, reject) {
-    			redis_client.hget('accounts:lookup:login', req.body.login, function(redis_error, redis_reply) {
-    				if(redis_error) { reject({status: '503'}); }
-    				else { 
-    					console.log("a ", redis_reply);
-    					if(redis_reply != null) {
-    						reject({code: '422', message: {code: '1', title: 'Value is not unique', detail: 'Check login field'}});
-    					} else { resolve(); }
-    				} 
-    			});
-    		},
-	        function(resolve, reject) {
-				redis_client.hget('accounts:lookup:nickname', req.body.nickname, function(redis_error, redis_reply) {
-					if(redis_error) { reject({status: '503'}); }
-					else { 
-						console.log("b ", redis_reply);
-						if(redis_reply != null) {
-							reject({code: '422', message: {code: '2', title: 'Value is not unique', detail: 'Check nickname field'}});
-						} else { resolve(); }
-					} 
-				});
-			}    		
-        ]).then(function() { 
-        	console.log("1"); 
-        }).catch(function() { 
-        	console.log("2"); 
-        });
+	validateBody().then(function() {
+		return new Promise(function(resolve, reject) {
+
+			Promise.all([
+	             isLoginUnique(req.body.login),
+	             isNicknameUnique(req.body.nickname)
+	        ]).then(function(results) { 
+	        	resolve();
+	        }).catch(function(error) { 
+	        	reject(error);
+	        });
+		
+		});
+		
+		
 	}).then(function() { 
 		return new Promise(function(resolve, reject) { 
 			redis_client.incr('accounts:sequence', function(redis_error, redis_reply) {
@@ -46,25 +32,26 @@ function create(req, res, next) {
 		});
 	}).then(function(account_id) {
 		return new Promise(function(resolve, reject) {
-			redis_client.hmset('accounts:'+account_id, ['login', req.body.login, 'password', req.body.password], function(redis_error, redis_reply) {
+			redis_client.hmset('accounts:'+account_id, ['login', req.body.login, 'nickname', req.body.nickname, 'password', req.body.password], function(redis_error, redis_reply) {
 				if(redis_error) { reject({status: '503'}); } 
 				else { resolve(account_id); } 
 			});
 		});
 	}).then(function(account_id) {
-		return new Promise(function(resolve, reject) {
-			redis_client.hset('accounts:lookup:login', req.body.login, account_id, function(redis_error, redis_reply) {
-				if(redis_error) { reject({status: '503'}); } 
-				else { resolve(); } 
-			});
-		});
+		Promise.all([
+     		addLoginLookup(req.body.login, account_id),
+    		addNicknameLookup(req.body.nickname, account_id)
+        ]).then(function(results) { 
+        	resolve();
+        }).catch(function(error) { 
+        	reject(error);
+        });
 	}).then(function() {
 		res.status(201).end();
 	}).catch(function(error) {
-		console.log(error);
-		switch(error.code) {
+		console.log("catch error", error);
+		switch(error.status) {
 			case '422': {
-				
 				if(error) {
 					var api_response_obj = new api_response();
 					api_response_obj.set_data(error.message);
@@ -84,6 +71,7 @@ function create(req, res, next) {
 		}
 	});
 	
+	
 	function validateBody() {
 		return new Promise(function(resolve, reject) {
 			// Validate input attributes
@@ -94,16 +82,58 @@ function create(req, res, next) {
 			}).with('login', 'nickname', 'password');
 
 			joi.validate(req.body, bodySchema, function(err, value) {
-				if(err) { reject({code:'422'}); } 
+				if(err) { reject({status:'422'}); } 
 				else { resolve(); }
 			});
 		});
 	}
+	
+	function addLoginLookup(login, account_id) {
+		return new Promise(function(resolve, reject) {
+			redis_client.hset('accounts:lookup:login', login, account_id, function(redis_error, redis_reply) {
+				if(redis_error) { reject({status: '503'}); } 
+				else { resolve(); } 
+			});
+		});
+	}
+	
+	function addNicknameLookup(nickname, account_id) {
+		return new Promise(function(resolve, reject) {
+			redis_client.hset('accounts:lookup:nickname', nickname, account_id, function(redis_error, redis_reply) {
+				if(redis_error) { reject({status: '503'}); } 
+				else { resolve(); } 
+			});
+		});
+	}
+
+	function isLoginUnique(login) {
+		return new Promise(function(resolve, reject) {
+			redis_client.hget('accounts:lookup:login', login, function(redis_error, redis_reply) {
+				if(redis_error) { reject({status: '503'}); }
+				else { 
+					if(redis_reply != null) {
+						reject({status: '422', message: {code: '1', title: 'Value is not unique', detail: 'Check login field'}});
+					} else { resolve(); }
+				} 
+			});
+		});
+	}
+	
+	function isNicknameUnique(nickname) {
+        return new Promise(function(resolve, reject) {
+			redis_client.hget('accounts:lookup:nickname', nickname, function(redis_error, redis_reply) {
+				if(redis_error) { reject({status: '503'}); }
+				else { 
+					if(redis_reply != null) {
+						reject({status: '422', message: {code: '2', title: 'Value is not unique', detail: 'Check nickname field'}});
+					} else { resolve(); }
+				} 
+			});
+		})   		
+	}
 }
 
 function get(req, res) {
-	
-	
 	res.status(200).end();
 }
 
