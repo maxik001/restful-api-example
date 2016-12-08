@@ -1,11 +1,14 @@
 import joi from 'joi';
 import json_validator from 'payload-validator';
+import jwt from 'jsonwebtoken';
 import md5 from 'md5';
 import redis from 'redis';
 
+import api_response from '../../classes/api_response';
+
 import redis_client from '../redis_client';
 
-import api_response from '../../classes/api_response';
+import jwt_config from '../../config/jwt_config.json';
 
 function create(req, res) {
 	
@@ -35,16 +38,33 @@ function create(req, res) {
 			});
 		});
 	}).then(function(account_id) {
-		Promise.all([
-     		addLoginLookup(req.body.login, account_id),
-    		addNicknameLookup(req.body.nickname, account_id)
-        ]).then(function(results) { 
-        	resolve();
-        }).catch(function(error) { 
-        	reject(error);
-        });
-	}).then(function() {
-		res.status(201).end();
+		return new Promise(function(resolve, reject) {
+			Promise.all([
+	      		addLoginLookup(req.body.login, account_id),
+	     		addNicknameLookup(req.body.nickname, account_id)
+	         ]).then(function(results) {
+	         	resolve(account_id);
+	         }).catch(function(error) { 
+	         	reject(error);
+	         });
+		});
+	}).then(function(account_id) {
+		// Generate JWT
+		const payload = {
+			id: account_id,
+			iat: Math.floor(Date.now() / jwt_config.lifeTime)
+		};
+		var token = jwt.sign(payload, jwt_config.secret);
+		
+		const bodyData = {
+			id: account_id,
+			jwt: token
+		};
+		
+		var api_response_obj = new api_response();
+		api_response_obj.set_data(bodyData);
+
+		res.status(201).json(api_response_obj.get()).end();
 	}).catch(function(error) {
 		console.log("catch error", error);
 		switch(error.status) {
@@ -68,6 +88,9 @@ function create(req, res) {
 		}
 	});
 	
+	/**
+	 * Validate Body
+	 */
 	function validateBody() {
 		return new Promise(function(resolve, reject) {
 			// Validate input attributes
@@ -83,12 +106,15 @@ function create(req, res) {
 			});
 		});
 	}
-	
+
+	/**
+	 * Lookup
+	 */
 	function addLoginLookup(login, account_id) {
 		return new Promise(function(resolve, reject) {
 			redis_client.hset('accounts:lookup:login', login, account_id, function(redis_error, redis_reply) {
 				if(redis_error) { reject({status: '503'}); } 
-				else { resolve(); } 
+				else { resolve(account_id); } 
 			});
 		});
 	}
@@ -97,11 +123,14 @@ function create(req, res) {
 		return new Promise(function(resolve, reject) {
 			redis_client.hset('accounts:lookup:nickname', nickname, account_id, function(redis_error, redis_reply) {
 				if(redis_error) { reject({status: '503'}); } 
-				else { resolve(); } 
+				else { resolve(account_id); } 
 			});
 		});
 	}
 
+	/**
+	 * isUnique
+	 */
 	function isLoginUnique(login) {
 		return new Promise(function(resolve, reject) {
 			redis_client.hget('accounts:lookup:login', login, function(redis_error, redis_reply) {
