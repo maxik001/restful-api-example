@@ -1,5 +1,4 @@
 import joi from 'joi';
-import json_validator from 'payload-validator';
 import jwt from 'jsonwebtoken';
 import md5 from 'md5';
 import redis from 'redis';
@@ -69,7 +68,7 @@ function create(req, res) {
 		console.log("catch error", error);
 		switch(error.status) {
 			case '422': {
-				if(error) {
+				if(error.message) {
 					var api_response_obj = new api_response();
 					api_response_obj.set_data(error.message);
 					res.status(422).json(api_response_obj.get());

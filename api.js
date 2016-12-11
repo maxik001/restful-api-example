@@ -7,6 +7,7 @@ import express from 'express';
 import json_validator from 'payload-validator';
 
 import * as accounts from './libs/routes/accounts';
+import * as auth from './libs/routes/auth';
 import * as hash from './libs/routes/hash';
 import * as random from './libs/routes/random';
 
@@ -16,6 +17,9 @@ const router = express.Router();
 // Accounts
 router.post('/accounts', accounts.create);
 router.get('/accounts/:id', accounts.get);
+
+// AUth
+router.post('/auth', auth.auth);
 
 // Hash
 router.delete('/hash', hash.revoke );
