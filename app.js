@@ -1,41 +1,41 @@
-/**
- * Filename: app.js
- */
-
 // Import
-import body_parser from 'body-parser';
-import express from 'express';
-import http from 'http';
+import body_parser from 'body-parser'
+import express from 'express'
+import http from 'http'
 
-import app_config from './config/app_config.json';
+import app_config from './config/app_config.json'
 
-import api from './api';
-import allowCros from './libs/cros';
-import logger from './logger';
+import api_router from './libs/api_router'
+import allowCros from './libs/cros'
+import logger from './libs/logger'
+import tokenDecode from './libs/token_decode'
 
 // Create app
-const app = express();
+const app = express()
 
 // Configure body parsing middleware
-app.use(body_parser.urlencoded({ extended: true }));
-app.use(body_parser.json());
+app.use(body_parser.urlencoded({ extended: true }))
+app.use(body_parser.json())
 
-app.use(logger);
+app.use(logger)
 
 // CROS Allow
-app.use(allowCros);
+app.use(allowCros)
 
-app.use('/', api);
+// Token Decode
+app.use(tokenDecode)
+
+app.use('/', api_router)
 
 // Create HTTP Server
-const http_server = http.createServer(app);
+const http_server = http.createServer(app)
 
 http_server.listen(
-	app_config.server.port, 
-	app_config.server.ip, 
-	() => {
-		console.log("Server ip : " + app_config.server.ip);
-		console.log("Server port : " + app_config.server.port);
-		console.log("Server is up!");
-	}
-);
+  app_config.server.port,
+  app_config.server.ip,
+  () => {
+    console.log('Server ip : ' + app_config.server.ip)
+    console.log('Server port : ' + app_config.server.port)
+    console.log('Server is up!')
+  }
+)
