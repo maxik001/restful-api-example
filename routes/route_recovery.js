@@ -24,6 +24,10 @@ import SMTPConfig from '../config/config_smtp.json'
 var emailTemplate= fs.readFileSync('./hjs/recovery_email.hjs', 'utf-8')
 var compiledEmailTemplate = hogan.compile(emailTemplate)
 
+var emailTemplateNewPasswd= fs.readFileSync('./hjs/recovery_new_passwd.hjs', 'utf-8')
+var compiledEmailTemplateNewPasswd = hogan.compile(emailTemplateNewPasswd)
+
+
 /*
  * curl -i -X POST -H "Content-Type: application/json" -d '{"email":"test@test.ru"}' "http://127.0.0.1:8080/recovery"
  */
@@ -132,69 +136,6 @@ function generate(req, res) {
 /*
  * curl -i -X GET -H "Content-Type: application/json" "http://127.0.0.1:8080/recovery/eef365cfda83fda23f724323df871b68"
  */
-function validate(req, res) {
-  console.log('validate')
-  
-  const hash = req.params.hash
-  
-  const redisClient = new redis.createClient({
-    host: configRedisRecovery.host,
-    port: configRedisRecovery.port,
-    db: configRedisRecovery.db,
-    password: configRedisRecovery.password
-  })
-
-  redisClient.on('error', function (err) {
-    console.log('Error! '+err)
-    throw '503'
-  })
-  
-  const mRecovery = new modelRecovery(redisClient)
-  
-  mRecovery.hasHash(hash).then(function(email) {
-    // Try to get account id by email
-    if(!email) { throw '404' }
-
-    // Connect to redis
-    const redisClient = new redis.createClient({
-      host: configRedis.host,
-      port: configRedis.port,
-      db: configRedis.db,
-      password: configRedis.password
-    })
-
-    redisClient.on('error', function (err) {
-      throw '503'
-    })    
-    
-    const mAccountsLookupEmail = new modelAccountsLookupEmail(redisClient)
-
-    return mAccountsLookupEmail.get(email)
-  }).then(function(accountId) {
-    res.status(200).end()
-  }).catch(function(error) {
-    // Catch exceptions and errors
-    console.log('error:', error)
-    
-    switch(error.status) {
-      case '404': {
-        res.status(404).end()
-        break;
-      } 
-      case '503': {
-        res.status(503).end()
-        break;
-      }
-      default: {
-        res.status(500).end()
-      }
-    }
-  })  
-}
-
-/*
- * curl -i -X GET -H "Content-Type: application/json" "http://127.0.0.1:8080/recovery/eef365cfda83fda23f724323df871b68"
- */
 function resetPassword(req, res) {
   console.log('validate')
   
@@ -273,8 +214,10 @@ function resetPassword(req, res) {
     
     mAccount.update(curAccount)
     
-    return newPasswd
-  }).then(function(newPasswd) {
+    return {curAccount, newPasswd}
+  }).then(function(data) {
+    console.log(data.newPasswd)
+    
     // Email to user 
     
     var server  = emailjs.server.connect({
@@ -286,11 +229,11 @@ function resetPassword(req, res) {
     var message = {
       text: "", 
       from: "noreply@amhub.ru", 
-      to: data.email,
+      to: data.curAccount.getEmail(),
       subject: "Новый пароль",
       attachment: [
         { 
-          data: compiledEmailTemplate.render({sitename: sitename, password: newPasswd}),
+          data: compiledEmailTemplateNewPasswd.render({sitename: sitename, password: data.newPasswd}),
           alternative: true 
         }
       ]
@@ -330,4 +273,4 @@ function resetPassword(req, res) {
 }
 
 
-export {generate, resetPassword, validate}
+export {generate, resetPassword}
