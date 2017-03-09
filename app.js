@@ -7,17 +7,19 @@ import app_config from './config/app_config.json'
 
 import api_router from './libs/api_router'
 import allowCros from './libs/cros'
-import logger from './libs/logger'
+import loggerApp from './libs/logger_app'
+import loggerHttp from './libs/logger_http'
 import tokenDecode from './libs/token_decode'
 
 // Create app
+loggerApp.info('App start')
 const app = express()
 
 // Configure body parsing middleware
 app.use(body_parser.urlencoded({ extended: true }))
 app.use(body_parser.json())
 
-app.use(logger)
+app.use(loggerHttp)
 
 // CROS Allow
 app.use(allowCros)

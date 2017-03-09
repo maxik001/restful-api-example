@@ -5,6 +5,7 @@ import joi from 'joi'
 import redis from 'redis'
 
 import hashGenerator from '../libs/hash_generator'
+import loggerApp from '../libs/logger_app'
 import passwdCrypt from '../libs/passwd_crypt'
 import passwdGenerator from '../libs/passwd_generator'
 
@@ -32,8 +33,6 @@ var compiledEmailTemplateNewPasswd = hogan.compile(emailTemplateNewPasswd)
  * curl -i -X POST -H "Content-Type: application/json" -d '{"email":"test@test.ru"}' "http://127.0.0.1:8080/recovery"
  */
 function generate(req, res) {
-  console.log('recovery')
-  
   validateBody(req.body).then(function () {
     // Write data in redis
     
@@ -137,7 +136,7 @@ function generate(req, res) {
  * curl -i -X GET -H "Content-Type: application/json" "http://127.0.0.1:8080/recovery/eef365cfda83fda23f724323df871b68"
  */
 function resetPassword(req, res) {
-  console.log('validate')
+  loggerApp.info('reset password')
   
   const hash = req.params.hash
   

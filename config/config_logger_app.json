@@ -1,0 +1,7 @@
+{
+	"access" : {
+		"path": "./logs/",
+		"filename": "app.log"
+	}
+	
+}
