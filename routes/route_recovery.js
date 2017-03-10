@@ -5,6 +5,7 @@ import joi from 'joi'
 import redis from 'redis'
 
 import hashGenerator from '../libs/hash_generator'
+import httpResWrapper from '../libs/http_response_wrapper'
 import loggerApp from '../libs/logger_app'
 import passwdCrypt from '../libs/passwd_crypt'
 import passwdGenerator from '../libs/passwd_generator'
@@ -96,24 +97,7 @@ function generate(req, res) {
     )
     
     res.status(200).end()
-  }).catch(function(error) {
-    if(error.message) console.log('error message:', error.message)
-    
-    // Catch exceptions and errors
-    switch(error.status) {
-      case '422': {
-        res.status(422).end()
-        break;
-      } 
-      case '503': {
-        res.status(503).end()
-        break;
-      }
-      default: {
-        res.status(500).end()
-      }
-    }
-  })
+  }).catch(httpResWrapper(error))
 
   // validateBody 
   function validateBody(data) {
@@ -251,24 +235,7 @@ function resetPassword(req, res) {
     )    
     
     res.status(200).end()
-  }).catch(function(error) {
-    // Catch exceptions and errors
-    console.log('error:', error)
-    
-    switch(error.status) {
-      case '404': {
-        res.status(404).end()
-        break;
-      } 
-      case '503': {
-        res.status(503).end()
-        break;
-      }
-      default: {
-        res.status(500).end()
-      }
-    }
-  })  
+  }).catch(function(error) { httpResWrapper(res, error) })  
 }
 
 
