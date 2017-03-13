@@ -34,6 +34,8 @@ var compiledEmailTemplateNewPasswd = hogan.compile(emailTemplateNewPasswd)
  * curl -i -X POST -H "Content-Type: application/json" -d '{"email":"test@test.ru"}' "http://127.0.0.1:8080/recovery"
  */
 function generate(req, res) {
+  loggerApp.debug('route_recovery.generate')
+  
   validateBody(req.body).then(function () {
     // Write data in redis
     
@@ -45,13 +47,13 @@ function generate(req, res) {
     })
 
     redisClient.on('error', function (err) {
-      throw {
-        status: '503',
-        message: err
-      }
+      loggerApp.error(err)
+      res.status(503).end()
     })
 
     const hash = hashGenerator(configRecovery.hashLength)
+  
+    loggerApp.debug('new hash generated', hash)
     
     const mRecovery = new modelRecovery(redisClient)
     mRecovery.createKey(hash, req.body.email).then(function(keyName) {
@@ -62,18 +64,18 @@ function generate(req, res) {
     
     return {hash: hash, email: req.body.email}
   }).then(function(data) {
-    // Email to user 
-    
+    // SMTP server config 
     var server  = emailjs.server.connect({
       host: SMTPConfig.ip
     })
     
+    // Email description
     const recoveryURL = configRecovery.recoveryURL+data.hash
-    const sitename = "amhub.ru"
+    const sitename = configAPI.siteDomain
     
     var message = {
       text: "", 
-      from: "noreply@amhub.ru", 
+      from: "noreply@"+configAPI.siteDomain, 
       to: data.email,
       subject: "Восстановление пароля",
       attachment: [
@@ -84,31 +86,37 @@ function generate(req, res) {
       ]
     }
     
+    // Send email
+    loggerApp.debug('send email')
+    
     server.send(
       message, 
       function(err, message) { 
         if(err) {
-          throw {
-            status: '503',
-            message: err
-          } 
+          loggerApp.error(err)
+          res.status(503).end()
         } 
       }
     )
     
     res.status(200).end()
-  }).catch(httpResWrapper(error))
+  }).catch(function(error) { httpResWrapper(res, error) })
 
-  // validateBody 
+  //
+  // validateBody
+  //
   function validateBody(data) {
+    loggerApp.debug('validate body', data)
+    
     return new Promise(function(resolve, reject) {
-      // Validate input attributes
+      // Schema description
       var bodySchema = joi.object({
         email: joi.string().email().required()
       })
 
+      // Do validate
       joi.validate(data, bodySchema, function(err, value) {
-        if(err) { reject({ status:'422' }) } 
+        if(err) { reject({ status: '422' }) } 
         else { resolve() }
       })
     })
@@ -120,8 +128,9 @@ function generate(req, res) {
  * curl -i -X GET -H "Content-Type: application/json" "http://127.0.0.1:8080/recovery/eef365cfda83fda23f724323df871b68"
  */
 function resetPassword(req, res) {
-  loggerApp.info('reset password')
+  loggerApp.debug('route_recovery.resetPassword')
   
+  loggerApp.debug('get hash', hash)
   const hash = req.params.hash
   
   const redisClient = new redis.createClient({
@@ -132,8 +141,8 @@ function resetPassword(req, res) {
   })
 
   redisClient.on('error', function (err) {
-    console.log('Error! '+err)
-    throw '503'
+    loggerApp.error(err)
+    res.status(503).end()
   })
   
   const mRecovery = new modelRecovery(redisClient)
@@ -151,7 +160,8 @@ function resetPassword(req, res) {
     })
 
     redisClient.on('error', function (err) {
-      throw '503'
+      loggerApp.error(err)
+      res.status(503).end()
     })    
     
     const mAccountsLookupEmail = new modelAccountsLookupEmail(redisClient)
@@ -171,7 +181,8 @@ function resetPassword(req, res) {
     })
 
     redisClient.on('error', function (err) {
-      throw '503'
+      loggerApp.error(err)
+      res.status(503).end()
     })    
     
     const mAccount = new modelAccount(redisClient)
@@ -190,7 +201,8 @@ function resetPassword(req, res) {
     })
 
     redisClient.on('error', function (err) {
-      throw '503'
+      loggerApp.error(err)
+      res.status(503).end()
     })    
     
     const mAccount = new modelAccount(redisClient)    
@@ -199,19 +211,17 @@ function resetPassword(req, res) {
     
     return {curAccount, newPasswd}
   }).then(function(data) {
-    console.log(data.newPasswd)
-    
-    // Email to user 
-    
+    // SMTP server config
     var server  = emailjs.server.connect({
       host: SMTPConfig.ip
     })
     
-    const sitename = "amhub.ru"
+    // Email description
+    const sitename = configAPI.siteDomain
     
     var message = {
       text: "", 
-      from: "noreply@amhub.ru", 
+      from: "noreply@" + configAPI.siteDomain, 
       to: data.curAccount.getEmail(),
       subject: "Новый пароль",
       attachment: [
@@ -222,14 +232,13 @@ function resetPassword(req, res) {
       ]
     }
     
+    // Send email
     server.send(
       message, 
       function(err, message) { 
         if(err) {
-          throw {
-            status: '503',
-            message: err
-          } 
+          loggerApp.error(err)
+          res.status(503).end()
         } 
       }
     )    
