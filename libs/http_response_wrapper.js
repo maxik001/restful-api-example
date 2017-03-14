@@ -11,6 +11,13 @@ export default function(res, objError) {
       break;
     } 
     case '422': {
+      var resBody = {
+        status: 422,
+        title: objError.title?objError.title:'',
+        detail: objError.detail?objError.detail:''
+      }
+      
+      res.json(resBody)      
       res.status(422).end()
       break;
     } 

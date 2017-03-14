@@ -3,22 +3,8 @@
 ### About
 This is a small project an example of RESTful API server.
 
-This API contains functions that allow to proccess some preregistration workflow. 
-
-### Workflow description
-When a new user wants to register on the site are commonly used two-factor register.
-
-#### For example such a procedure:
-1. The user leaves his email on the site.
-2. On the email is sent direct link (which has a unique identifier hash) to the registration page.
-3. The user clicks on this link and completes the registration.
-
-#### Presented api allows you to:
-1. Get a new identity hash.
-2. Check the existing identifier hash.
-3. Remove the identifier hash.
-
 ### API documentation
+Is not actual. Update later...
 
 #### 1. Get new hash
 Request:
@@ -54,12 +40,15 @@ Response:
 HTTP/1.1 200 OK
 
 
-
 ### How to start server
 ```
 # babel-node ./app.js
 ```
+
 ### Tags
-[Node.js](https://nodejs.org/)
-[Express](http://expressjs.com/)
-[Redis](http://redis.io/)
+* [Node.js](https://nodejs.org/)
+* [Express](http://expressjs.com/)
+* [Redis](http://redis.io/)
+
+### Links
+* [Joi](https://github.com/hapijs/joi) - Object schema description language and validator for JavaScript objects

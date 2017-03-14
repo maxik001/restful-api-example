@@ -7,6 +7,7 @@ import * as routeJWTCheck from '../routes/route_jwt_check'
 import * as routePerson from '../routes/route_person'
 import * as routeMenu from '../routes/route_menu'
 import * as routeRecovery from '../routes/route_recovery'
+import * as routeReg from '../routes/route_reg'
 
 const router = express.Router()
 
@@ -31,5 +32,9 @@ router.get('/person/:id', routePerson.getPerson)
 // Recovery
 router.get('/recovery/:hash', routeRecovery.resetPassword)
 router.post('/recovery', routeRecovery.generate)
+
+// Reg
+router.get('/reg/:hash', routeReg.createAccount)
+router.post('/reg', routeReg.doPreReg)
 
 export default router
