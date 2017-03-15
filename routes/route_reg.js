@@ -10,8 +10,8 @@ function createAccount(req, res) {
 function doPreReg(req, res) {
   loggerApp.debug('route_reg.doPrereg')
 
-  validateBody(req.body).then(function() {
-    
+  validateBody(req.body).then(function(stt) {
+    //res.status(200).end()
   }).catch(function(error) { httpResWrapper(res, error) })
   
   //

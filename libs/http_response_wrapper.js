@@ -16,9 +16,7 @@ export default function(res, objError) {
         title: objError.title?objError.title:'',
         detail: objError.detail?objError.detail:''
       }
-      
-      res.json(resBody)      
-      res.status(422).end()
+      res.status(422).json(resBody).end()
       break;
     } 
     case '503': {
