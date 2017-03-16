@@ -22,4 +22,22 @@ export default class modelAccountsLookupEmail {
       )
     }) 
   }
+  
+  isNotUsed (email) {
+    var redisClient = this.redisClient
+    var keyName = this.keyName
+
+    return new Promise (function (resolve, reject) {
+      redisClient.hget(
+        keyName,
+        email,
+        function (err, reply) {
+          if (err) { reject(err) }
+          else if(!reply) { resolve() }
+          else { reject({ status: '302' }) }
+        }
+      )
+    }) 
+  }
+  
 }
